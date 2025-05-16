@@ -2,6 +2,12 @@
 
 import React, { useRef } from "react";
 import { useScroll, useTransform, motion, MotionValue } from "motion/react";
+import { ReactNode } from "react";
+
+interface HeaderProps {
+	translate: MotionValue<number>; // from useTransform or useScroll
+	titleComponent: ReactNode; // JSX passed as child
+}
 
 export const ContainerScroll = ({
 	titleComponent,
@@ -55,7 +61,7 @@ export const ContainerScroll = ({
 	);
 };
 
-export const Header = ({ translate, titleComponent }: any) => {
+export const Header = ({ translate, titleComponent }: HeaderProps) => {
 	return (
 		<motion.div
 			style={{
