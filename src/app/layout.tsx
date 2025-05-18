@@ -1,36 +1,34 @@
-import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+"use client";
+import { ThemeProvider } from "next-themes";
+import { Inter } from "next/font/google";
 import "./globals.css";
 import AbhikoNavbar from "@/components/layout/Navbar";
+import { cn } from "@/lib/utils";
 
-const geistSans = Geist({
-	variable: "--font-geist-sans",
-	subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-	variable: "--font-geist-mono",
-	subsets: ["latin"],
-});
-
-export const metadata: Metadata = {
-	title: "Abhiko - Order Food, Manage Restaurants, Track Sales",
-	description:
-		"Multi-role food ordering and restaurant management platform. Try Abhiko now!",
-};
+const inter = Inter({ subsets: ["latin"] });
 
 export default function RootLayout({
 	children,
-}: Readonly<{
+}: {
 	children: React.ReactNode;
-}>) {
+}) {
 	return (
-		<html lang="en">
+		<html lang="en" suppressHydrationWarning>
 			<body
-				className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+				className={cn(
+					"min-h-screen bg-background font-sans antialiased",
+					inter.className,
+				)}
 			>
-				<AbhikoNavbar />
-				<main>{children}</main>
+				<ThemeProvider
+					attribute="class"
+					defaultTheme="dark"
+					enableSystem
+					disableTransitionOnChange
+				>
+					<AbhikoNavbar />
+					<main>{children}</main>
+				</ThemeProvider>
 			</body>
 		</html>
 	);

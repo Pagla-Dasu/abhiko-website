@@ -1,0 +1,368 @@
+"use client";
+
+import React, { useState } from "react";
+import { Boxes } from "@/components/ui/background-boxes";
+import { AnimatedFloatingModal } from "@/components/ui/animated-floating-modal";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import { motion, AnimatePresence } from "framer-motion";
+
+// Schema
+const registerSchema = z.object({
+	firstName: z.string().min(1, "First name is required"),
+	lastName: z.string().min(1, "Last name is required"),
+	email: z.string().email("Enter a valid email"),
+	phone: z.string().regex(/^\d{10}$/, "Phone number must be 10 digits"),
+});
+
+const otpSchema = z.object({
+	otp: z.string().length(6, "OTP must be 6 digits"),
+});
+
+const loginSchema = z.object({
+	phone: z.string().regex(/^\d{10}$/, "Phone number must be 10 digits"),
+});
+
+type RegisterFormData = z.infer<typeof registerSchema>;
+type OtpFormData = z.infer<typeof otpSchema>;
+type LoginFormData = z.infer<typeof loginSchema>;
+
+export default function CustomerAuthPage() {
+	const [isRegistering, setIsRegistering] = useState(false);
+	const [showOtp, setShowOtp] = useState(false);
+	const [error, setError] = useState<string | null>(null);
+
+	const {
+		register,
+		handleSubmit,
+		formState: { errors },
+	} = useForm<RegisterFormData>({
+		resolver: zodResolver(registerSchema),
+	});
+
+	const {
+		register: loginRegister,
+		handleSubmit: handleLoginSubmit,
+		formState: { errors: loginErrors },
+	} = useForm<LoginFormData>({
+		resolver: zodResolver(loginSchema),
+	});
+
+	const {
+		register: otpRegister,
+		handleSubmit: handleOtpSubmit,
+		formState: { errors: otpErrors },
+	} = useForm<OtpFormData>({
+		resolver: zodResolver(otpSchema),
+	});
+
+	const onRegisterSubmit = (data: RegisterFormData) => {
+		console.log("Registering:", data);
+		setShowOtp(true);
+	};
+
+	const onOtpSubmit = (data: OtpFormData) => {
+		console.log("OTP Submitted:", data);
+		setIsRegistering(false);
+		setShowOtp(false);
+	};
+
+	const onLoginSubmit = (data: LoginFormData) => {
+		console.log("Logging in with:", data);
+	};
+
+	return (
+		<div className="relative min-h-screen w-full overflow-hidden bg-neutral-950 flex items-center justify-center px-4">
+			<Boxes />
+
+			<div className="relative z-10 w-full max-w-md">
+				<div className="shadow-input rounded-xl bg-black/50 backdrop-blur-lg p-6 md:rounded-2xl md:p-8 border border-white/10">
+					<div className="absolute inset-0 bg-gradient-to-r from-transparent via-cyan-500/5 to-transparent opacity-50 rounded-xl md:rounded-2xl" />
+
+					<AnimatePresence mode="wait">
+						{isRegistering ? (
+							showOtp ? (
+								<motion.div
+									key="otp"
+									initial={{ opacity: 0, x: 50 }}
+									animate={{ opacity: 1, x: 0 }}
+									exit={{ opacity: 0, x: -50 }}
+									transition={{ duration: 0.4 }}
+									className="relative"
+								>
+									<h2 className="text-2xl font-bold text-white mb-2 text-center">
+										Enter OTP
+									</h2>
+									<p className="text-sm text-neutral-400 mb-6 text-center">
+										We&apos;ve sent a verification code to
+										your phone
+									</p>
+
+									<form
+										className="space-y-4"
+										onSubmit={handleOtpSubmit(onOtpSubmit)}
+									>
+										<LabelInputContainer>
+											<Label
+												htmlFor="otp"
+												className="text-white"
+											>
+												6-digit OTP
+											</Label>
+											<Input
+												id="otp"
+												type="text"
+												placeholder="123456"
+												className="bg-white/5 border-white/10 text-white placeholder:text-neutral-500"
+												{...otpRegister("otp")}
+											/>
+											{otpErrors.otp && (
+												<p className="text-red-400 text-sm mt-1">
+													{otpErrors.otp.message}
+												</p>
+											)}
+										</LabelInputContainer>
+										<SubmitButton>Verify OTP</SubmitButton>
+									</form>
+
+									<div className="mt-4 text-center">
+										<button
+											onClick={() => setShowOtp(false)}
+											className="text-sm text-cyan-400 hover:text-cyan-300 transition-colors"
+										>
+											&larr; Back to registration
+										</button>
+									</div>
+								</motion.div>
+							) : (
+								<motion.div
+									key="register"
+									initial={{ opacity: 0, x: 50 }}
+									animate={{ opacity: 1, x: 0 }}
+									exit={{ opacity: 0, x: -50 }}
+									transition={{ duration: 0.4 }}
+									className="relative"
+								>
+									<h2 className="text-2xl font-bold text-white mb-2 text-center">
+										Create Account
+									</h2>
+									<p className="text-sm text-neutral-400 mb-6 text-center">
+										Join our community today
+									</p>
+
+									<form
+										className="space-y-4"
+										onSubmit={handleSubmit(
+											onRegisterSubmit,
+										)}
+									>
+										<div className="flex gap-2">
+											<LabelInputContainer>
+												<Label
+													htmlFor="firstName"
+													className="text-white"
+												>
+													First Name
+												</Label>
+												<Input
+													id="firstName"
+													placeholder="John"
+													className="bg-white/5 border-white/10 text-white placeholder:text-neutral-500"
+													{...register("firstName")}
+												/>
+												{errors.firstName && (
+													<p className="text-red-400 text-sm mt-1">
+														{
+															errors.firstName
+																.message
+														}
+													</p>
+												)}
+											</LabelInputContainer>
+
+											<LabelInputContainer>
+												<Label
+													htmlFor="lastName"
+													className="text-white"
+												>
+													Last Name
+												</Label>
+												<Input
+													id="lastName"
+													placeholder="Doe"
+													className="bg-white/5 border-white/10 text-white placeholder:text-neutral-500"
+													{...register("lastName")}
+												/>
+												{errors.lastName && (
+													<p className="text-red-400 text-sm mt-1">
+														{
+															errors.lastName
+																.message
+														}
+													</p>
+												)}
+											</LabelInputContainer>
+										</div>
+
+										<LabelInputContainer>
+											<Label
+												htmlFor="email"
+												className="text-white"
+											>
+												Email
+											</Label>
+											<Input
+												id="email"
+												placeholder="you@example.com"
+												className="bg-white/5 border-white/10 text-white placeholder:text-neutral-500"
+												{...register("email")}
+											/>
+											{errors.email && (
+												<p className="text-red-400 text-sm mt-1">
+													{errors.email.message}
+												</p>
+											)}
+										</LabelInputContainer>
+
+										<LabelInputContainer>
+											<Label
+												htmlFor="phone"
+												className="text-white"
+											>
+												Phone Number
+											</Label>
+											<Input
+												id="phone"
+												placeholder="9876543210"
+												className="bg-white/5 border-white/10 text-white placeholder:text-neutral-500"
+												{...register("phone")}
+											/>
+											{errors.phone && (
+												<p className="text-red-400 text-sm mt-1">
+													{errors.phone.message}
+												</p>
+											)}
+										</LabelInputContainer>
+
+										<SubmitButton>Send OTP</SubmitButton>
+									</form>
+
+									<div className="my-6 h-px w-full bg-gradient-to-r from-transparent via-neutral-300/20 to-transparent" />
+
+									<p className="text-sm text-white text-center">
+										Already registered?{" "}
+										<button
+											onClick={() =>
+												setIsRegistering(false)
+											}
+											className="text-cyan-400 hover:text-cyan-300 transition-colors font-medium"
+										>
+											Sign In
+										</button>
+									</p>
+								</motion.div>
+							)
+						) : (
+							<motion.div
+								key="login"
+								initial={{ opacity: 0, x: -50 }}
+								animate={{ opacity: 1, x: 0 }}
+								exit={{ opacity: 0, x: 50 }}
+								transition={{ duration: 0.4 }}
+								className="relative"
+							>
+								<h2 className="text-2xl font-bold text-white mb-2 text-center">
+									Welcome Back
+								</h2>
+								<p className="text-sm text-neutral-400 mb-6 text-center">
+									Sign in to continue to your account
+								</p>
+
+								<form
+									className="space-y-4"
+									onSubmit={handleLoginSubmit(onLoginSubmit)}
+								>
+									<LabelInputContainer>
+										<Label
+											htmlFor="loginPhone"
+											className="text-white"
+										>
+											Phone Number
+										</Label>
+										<Input
+											id="loginPhone"
+											placeholder="9876543210"
+											className="bg-white/5 border-white/10 text-white placeholder:text-neutral-500"
+											{...loginRegister("phone")}
+										/>
+										{loginErrors.phone && (
+											<p className="text-red-400 text-sm mt-1">
+												{loginErrors.phone.message}
+											</p>
+										)}
+									</LabelInputContainer>
+									<SubmitButton>Send OTP</SubmitButton>
+								</form>
+
+								<div className="my-6 h-px w-full bg-gradient-to-r from-transparent via-neutral-300/20 to-transparent" />
+
+								<p className="text-sm text-white text-center">
+									Don&apos;t have an account?{" "}
+									<button
+										onClick={() => setIsRegistering(true)}
+										className="text-cyan-400 hover:text-cyan-300 transition-colors font-medium"
+									>
+										Register
+									</button>
+								</p>
+							</motion.div>
+						)}
+					</AnimatePresence>
+				</div>
+			</div>
+
+			{/* Error Modal */}
+			{error && (
+				<AnimatedFloatingModal
+					open={!!error}
+					message={error}
+					onClose={() => setError(null)}
+				/>
+			)}
+		</div>
+	);
+}
+
+const SubmitButton = ({ children }: { children: React.ReactNode }) => (
+	<button
+		type="submit"
+		className="group/btn relative block h-12 w-full rounded-md bg-gradient-to-br from-cyan-500 to-indigo-600 font-medium text-white shadow-[0px_1px_0px_0px_#ffffff40_inset,0px_-1px_0px_0px_#ffffff40_inset] transition-all hover:from-cyan-400 hover:to-indigo-500 active:scale-[0.98]"
+	>
+		{children}
+		<BottomGradient />
+	</button>
+);
+
+const LabelInputContainer = ({
+	children,
+	className,
+}: {
+	children: React.ReactNode;
+	className?: string;
+}) => (
+	<div className={cn("flex w-full flex-col space-y-2", className)}>
+		{children}
+	</div>
+);
+
+const BottomGradient = () => (
+	<>
+		<span className="absolute inset-x-0 -bottom-px block h-px w-full bg-gradient-to-r from-transparent via-cyan-500 to-transparent opacity-0 transition duration-500 group-hover/btn:opacity-100" />
+		<span className="absolute inset-x-10 -bottom-px mx-auto block h-px w-1/2 bg-gradient-to-r from-transparent via-indigo-500 to-transparent opacity-0 blur-sm transition duration-500 group-hover/btn:opacity-100" />
+		<span className="absolute inset-x-0 -top-px block h-px w-full bg-gradient-to-r from-transparent via-cyan-500/30 to-transparent opacity-0 transition duration-500 group-hover/btn:opacity-100" />
+	</>
+);

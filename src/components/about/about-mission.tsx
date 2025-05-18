@@ -75,7 +75,7 @@ export default function AboutMission() {
 						className="relative w-64 h-64 md:w-80 md:h-80 bg-white/5 rounded-full border border-white/20 shadow-2xl flex items-center justify-center overflow-hidden"
 					>
 						<Image
-							src="/logo.png"
+							src="/assets/images/abhiko.png"
 							alt="Abhiko Logo"
 							fill
 							className="object-contain p-8"

@@ -42,6 +42,11 @@
 	--radius-lg: var(--radius);
 	--radius-xl: calc(var(--radius) + 4px);
 
+	--shadow-input:
+		0px 2px 3px -1px rgba(0, 0, 0, 0.1),
+		0px 1px 0px 0px rgba(25, 28, 33, 0.02),
+		0px 0px 0px 1px rgba(25, 28, 33, 0.08);
+
 	--animate-aurora: aurora 60s linear infinite;
 	@keyframes aurora {
 		from {
@@ -90,6 +95,31 @@
 	--sidebar-accent-foreground: oklch(0.205 0 0);
 	--sidebar-border: oklch(0.922 0 0);
 	--sidebar-ring: oklch(0.708 0 0);
+	/* Ensure theme toggle is always visible */
+	.theme-toggle-wrapper {
+		position: relative;
+		z-index: 60;
+		display: block !important;
+	}
+
+	/* Fix for dropdown content to appear above other elements */
+	.dropdown-content {
+		z-index: 70;
+	}
+
+	/* Fix any potential overflow issues */
+	.nav-container {
+		overflow: visible !important;
+	}
+
+	/* Add debugging outlines if needed */
+	.debug .theme-toggle-wrapper {
+		outline: 2px solid red;
+	}
+
+	.debug .dropdown-content {
+		outline: 2px solid blue;
+	}
 }
 
 .dark {

@@ -17,7 +17,7 @@ export default function HeroSection() {
 				</p>
 
 				<div className="mt-10 flex flex-col sm:flex-row justify-center gap-4">
-					<Link href="/(auth)/register">
+					<Link href="/login/customer">
 						<Button size="lg">Order Now</Button>
 					</Link>
 					<Link href="/(restaurant)/dashboard">

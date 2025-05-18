@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/resizable-navbar";
 import Link from "next/link";
 import { useState } from "react";
+import { ThemeToggle } from "../ui/theme-toggle";
 
 export default function AbhikoNavbar() {
 	const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -21,17 +22,18 @@ export default function AbhikoNavbar() {
 	const navItems = [
 		{ name: "About", href: "/about" },
 		{ name: "Restaurant Partner", href: "/(restaurant)/dashboard" },
-		{ name: "Suttler", href: "/abhryder" },
-		{ name: "Contact", href: "/contact" }, // update route if needed
+		{ name: "Abhryder", href: "/abhryder" },
+		{ name: "Contact", href: "/contact" },
 	];
 
 	return (
-		<div className="relative w-full z-50">
+		<div className="fixed top-0 left-0 right-0 w-full z-50 bg-background/80 backdrop-blur-sm">
 			<Navbar>
 				{/* Desktop View */}
-				<NavBody>
+				<NavBody className="relative">
 					{/* Logo */}
 					<NavbarLogo />
+
 					{/* Nav Links */}
 					<NavItems
 						items={navItems.map((item) => ({
@@ -41,8 +43,11 @@ export default function AbhikoNavbar() {
 					/>
 
 					{/* Right CTA */}
-					<div className="flex items-center gap-4">
-						<Link href="/(auth)/login">
+					<div className="flex items-center gap-4 relative z-[55]">
+						<div className="inline-block">
+							<ThemeToggle />
+						</div>
+						<Link href="/login">
 							<NavbarButton variant="primary">Login</NavbarButton>
 						</Link>
 					</div>
@@ -53,12 +58,15 @@ export default function AbhikoNavbar() {
 					<MobileNavHeader>
 						{/* Logo */}
 						<NavbarLogo />
-						<MobileNavToggle
-							isOpen={isMobileMenuOpen}
-							onClick={() =>
-								setIsMobileMenuOpen(!isMobileMenuOpen)
-							}
-						/>
+						<div className="flex items-center gap-2">
+							<ThemeToggle />
+							<MobileNavToggle
+								isOpen={isMobileMenuOpen}
+								onClick={() =>
+									setIsMobileMenuOpen(!isMobileMenuOpen)
+								}
+							/>
+						</div>
 					</MobileNavHeader>
 
 					<MobileNavMenu
@@ -75,9 +83,8 @@ export default function AbhikoNavbar() {
 								{item.name}
 							</Link>
 						))}
-
 						<Link
-							href={"/(auth)/login"}
+							href={"/login"}
 							className="w-full items-center justify-center text-center"
 						>
 							<NavbarButton
