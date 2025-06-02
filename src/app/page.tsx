@@ -8,7 +8,8 @@ import AppCtaRibbon from "@/components/landing/app-cta-ribbon";
 import WhyAbhikoSection from "@/components/landing/why-abhiko-section";
 import FooterSection from "@/components/landing/footer-section";
 
-export default function LandingPage() {
+export default function Home() {
+
 	return (
 		<>
 			<Head>
