@@ -27,7 +27,7 @@ export default function HeroSection() {
 							Order Now
 						</Button>
 					</Link>
-					<Link href="/(restaurant)/dashboard">
+					<Link href="/login/restaurant">
 						<Button
 							variant="outline"
 							size="lg"

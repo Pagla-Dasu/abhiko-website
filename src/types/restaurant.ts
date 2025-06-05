@@ -49,3 +49,37 @@ export type Restaurant = {
 	orderType: "Delivery" | "Takeaway" | "Dine-in";
 	menu: MenuCategory[];
 };
+
+export interface RestaurantDetailsData {
+	city: string;
+	ownerContactNumber: string;
+	whatsappNumber: string;
+	restaurantName: string;
+	preferredLanguages: string[];
+	otp: string;
+}
+
+export interface FSSAIDetailsData {
+	fssaiExpirationDate: Date;
+	fssaiRegistrationNumber: string;
+	licenceType: string;
+	fssaiFirmName: string;
+	address: string;
+}
+
+export interface GSTPANDetailsData {
+	gstCategory: string;
+	panNumber: string;
+	panDocument: File | null;
+}
+
+export interface DeclarationData {
+	termsAccepted: boolean;
+}
+
+export interface RestaurantRegistrationData {
+	restaurantDetails?: RestaurantDetailsData;
+	fssaiDetails?: FSSAIDetailsData;
+	gstPanDetails?: GSTPANDetailsData;
+	declaration?: DeclarationData;
+}

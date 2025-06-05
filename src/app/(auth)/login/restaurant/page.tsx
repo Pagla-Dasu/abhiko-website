@@ -1,93 +1,161 @@
 "use client";
-import type React from "react";
-import { Label } from "@/components/ui/label";
+
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { cn } from "@/lib/utils";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
+import { BackgroundBeams } from "@/components/ui/background-beams";
 
-export default function SignupFormDemo() {
-	const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-		e.preventDefault();
-		console.log("Form submitted");
+export default function RestaurantLoginPage() {
+	const [phoneNumber, setPhoneNumber] = useState("");
+	const [otp, setOtp] = useState("");
+	const [showOtpInput, setShowOtpInput] = useState(false);
+
+	const handleSendOtp = async () => {
+		if (!phoneNumber || phoneNumber.length !== 10) {
+			toast.error("Invalid Phone Number", {
+				description: "Please enter a valid 10-digit phone number",
+			});
+			return;
+		}
+		// TODO: Implement OTP sending logic
+		setShowOtpInput(true);
+		toast.success("OTP Sent", {
+			description: "Please check your phone for the OTP",
+		});
 	};
+
+	const handleVerifyOtp = async () => {
+		if (!otp || otp.length !== 6) {
+			toast.error("Invalid OTP", {
+				description: "Please enter a valid 6-digit OTP",
+			});
+			return;
+		}
+		// TODO: Implement OTP verification logic
+		toast.success("Login Successful", {
+			description: "Welcome back!",
+		});
+	};
+
 	return (
-		<div className="shadow-input mx-auto w-full max-w-md rounded-none bg-white p-4 md:rounded-2xl md:p-8 dark:bg-black">
-			<h2 className="text-xl font-bold text-neutral-800 dark:text-neutral-200">
-				Welcome to Aceternity
-			</h2>
-			<p className="mt-2 max-w-sm text-sm text-neutral-600 dark:text-neutral-300">
-				Login to aceternity if you can because we don&apos;t have a
-				login flow yet
-			</p>
+		<div className="relative w-full min-h-screen bg-neutral-950 overflow-hidden flex items-center justify-center px-4 py-24">
+			{/* Animated Background */}
+			<BackgroundBeams />
 
-			<form className="my-8" onSubmit={handleSubmit}>
-				<div className="mb-4 flex flex-col space-y-2 md:flex-row md:space-y-0 md:space-x-2">
-					<LabelInputContainer>
-						<Label htmlFor="firstname">First name</Label>
-						<Input id="firstname" placeholder="Tyler" type="text" />
-					</LabelInputContainer>
-					<LabelInputContainer>
-						<Label htmlFor="lastname">Last name</Label>
-						<Input id="lastname" placeholder="Durden" type="text" />
-					</LabelInputContainer>
-				</div>
-				<LabelInputContainer className="mb-4">
-					<Label htmlFor="email">Email Address</Label>
-					<Input
-						id="email"
-						placeholder="projectmayhem@fc.com"
-						type="email"
-					/>
-				</LabelInputContainer>
-				<LabelInputContainer className="mb-4">
-					<Label htmlFor="password">Password</Label>
-					<Input
-						id="password"
-						placeholder="••••••••"
-						type="password"
-					/>
-				</LabelInputContainer>
-				<LabelInputContainer className="mb-8">
-					<Label htmlFor="twitterpassword">
-						Your twitter password
-					</Label>
-					<Input
-						id="twitterpassword"
-						placeholder="••••••••"
-						type="twitterpassword"
-					/>
-				</LabelInputContainer>
-
-				<button
-					className="group/btn relative block h-10 w-full rounded-md bg-gradient-to-br from-black to-neutral-600 font-medium text-white shadow-[0px_1px_0px_0px_#ffffff40_inset,0px_-1px_0px_0px_#ffffff40_inset] dark:bg-zinc-800 dark:from-zinc-900 dark:to-zinc-900 dark:shadow-[0px_1px_0px_0px_#27272a_inset,0px_-1px_0px_0px_#27272a_inset]"
-					type="submit"
-				>
-					Sign up &rarr;
-					<BottomGradient />
-				</button>
-			</form>
+			{/* Content Wrapper */}
+			<div className="relative z-10 w-full max-w-md">
+				<Card className="w-full backdrop-blur-xl bg-white/10 border-white/20 shadow-2xl">
+					<CardHeader className="space-y-1">
+						<CardTitle className="text-2xl font-bold text-center bg-gradient-to-b from-neutral-200 to-neutral-600 bg-clip-text text-transparent">
+							Restaurant Login
+						</CardTitle>
+						<CardDescription className="text-center text-neutral-400">
+							Login to your restaurant account
+						</CardDescription>
+					</CardHeader>
+					<CardContent>
+						<Tabs defaultValue="login" className="w-full">
+							<TabsList className="grid w-full grid-cols-2 bg-neutral-900/50">
+								<TabsTrigger
+									value="login"
+									className="data-[state=active]:bg-neutral-800 data-[state=active]:text-white"
+								>
+									Login
+								</TabsTrigger>
+								<TabsTrigger
+									value="register"
+									className="data-[state=active]:bg-neutral-800 data-[state=active]:text-white"
+								>
+									Register
+								</TabsTrigger>
+							</TabsList>
+							<TabsContent value="login">
+								<div className="space-y-4 pt-4">
+									<div className="space-y-2">
+										<Label
+											htmlFor="phone"
+											className="text-neutral-200"
+										>
+											Phone Number
+										</Label>
+										<Input
+											id="phone"
+											type="tel"
+											placeholder="Enter your phone number"
+											value={phoneNumber}
+											onChange={(e) =>
+												setPhoneNumber(e.target.value)
+											}
+											maxLength={10}
+											className="bg-neutral-900/50 border-neutral-800 text-neutral-200 placeholder:text-neutral-500 focus:border-neutral-700"
+										/>
+									</div>
+									{showOtpInput && (
+										<div className="space-y-2">
+											<Label
+												htmlFor="otp"
+												className="text-neutral-200"
+											>
+												OTP
+											</Label>
+											<Input
+												id="otp"
+												type="text"
+												placeholder="Enter OTP"
+												value={otp}
+												onChange={(e) =>
+													setOtp(e.target.value)
+												}
+												maxLength={6}
+												className="bg-neutral-900/50 border-neutral-800 text-neutral-200 placeholder:text-neutral-500 focus:border-neutral-700"
+											/>
+										</div>
+									)}
+									<Button
+										className="w-full bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-500 hover:to-orange-400 text-white shadow-lg shadow-orange-500/25"
+										onClick={
+											showOtpInput
+												? handleVerifyOtp
+												: handleSendOtp
+										}
+									>
+										{showOtpInput
+											? "Verify OTP"
+											: "Send OTP"}
+									</Button>
+								</div>
+							</TabsContent>
+							<TabsContent value="register">
+								<div className="text-center py-4">
+									<p className="text-sm text-neutral-400 mb-6">
+										Please complete the registration process
+										to list your restaurant
+									</p>
+									<Button
+										className="w-full bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-500 hover:to-orange-400 text-white shadow-lg shadow-orange-500/25"
+										onClick={() =>
+											(window.location.href =
+												"/register/restaurant")
+										}
+									>
+										Start Registration
+									</Button>
+								</div>
+							</TabsContent>
+						</Tabs>
+					</CardContent>
+				</Card>
+			</div>
 		</div>
 	);
 }
-
-const BottomGradient = () => {
-	return (
-		<>
-			<span className="absolute inset-x-0 -bottom-px block h-px w-full bg-gradient-to-r from-transparent via-cyan-500 to-transparent opacity-0 transition duration-500 group-hover/btn:opacity-100" />
-			<span className="absolute inset-x-10 -bottom-px mx-auto block h-px w-1/2 bg-gradient-to-r from-transparent via-indigo-500 to-transparent opacity-0 blur-sm transition duration-500 group-hover/btn:opacity-100" />
-		</>
-	);
-};
-
-const LabelInputContainer = ({
-	children,
-	className,
-}: {
-	children: React.ReactNode;
-	className?: string;
-}) => {
-	return (
-		<div className={cn("flex w-full flex-col space-y-2", className)}>
-			{children}
-		</div>
-	);
-};
