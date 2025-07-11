@@ -1,3 +1,5 @@
+export const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "";
+
 export async function fetchRestaurants({
 	search = "",
 	filter = "",
@@ -14,7 +16,7 @@ export async function fetchRestaurants({
 	if (sort) query.append("sort", sort);
 
 	const res = await fetch(
-		`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/restaurants?${query.toString()}`,
+		`${BACKEND_URL}/api/restaurants?${query.toString()}`,
 	);
 
 	if (!res.ok) throw new Error("Failed to fetch restaurants");
