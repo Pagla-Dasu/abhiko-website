@@ -13,6 +13,9 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { NotificationsPanel } from "@/components/fsa/dashboard/NotificationsPanel";
+import { logoutRestaurant } from "@/lib/restaurant/api";
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 interface RestaurantNavbarProps {
 	restaurantId: string;
@@ -25,10 +28,19 @@ export function RestaurantNavbar({
 }: RestaurantNavbarProps) {
 	const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 	const [unreadCount, setUnreadCount] = useState(2); // Initial unread count
+	const router = useRouter();
 
-	const handleLogout = () => {
-		// Add logout logic here
-		console.log("Logging out...");
+	const handleLogout = async () => {
+		console.log("Logout clicked");
+		try {
+			await logoutRestaurant();
+			localStorage.removeItem("restaurant_jwt");
+			toast.success("Logged out successfully");
+			router.push("/login/restaurant");
+		} catch (err: unknown) {
+			const message = err instanceof Error ? err.message : String(err);
+			toast.error("Logout failed", { description: message });
+		}
 	};
 
 	return (

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RestaurantNavbar } from "./RestaurantNavbar";
 import { DashboardHome } from "./DashboardHome";
@@ -8,335 +8,257 @@ import { Orders } from "./Orders";
 import { Menu } from "./Menu";
 import { Profile } from "./Profile";
 import {
-	OrderStatus,
-	OrderType,
-	Order,
 	DashboardSummary,
 	Abhryder,
 	RecentOrder,
 	PerformanceMetrics,
-	CancellationReason,
+	OrderStatus,
 } from "@/types/restaurant-dashboard";
+import {
+	fetchDashboardSummary,
+	fetchAssignedAbhryders,
+	fetchAllOrders,
+} from "@/lib/restaurant/api";
+import { toast } from "sonner";
+import { formatDistanceToNow } from "date-fns";
+import { getS3ImageUrl } from "../../../utils/s3";
 
-// TODO: Replace with actual data fetching
-const mockData: {
-	summary: DashboardSummary;
-	abhryders: Abhryder[];
-	recentOrders: RecentOrder[];
-	performance: PerformanceMetrics;
-	orders: Order[];
-} = {
-	summary: {
-		totalOrders: 150,
-		totalRevenue: 45000,
-		pendingOrders: 5,
-		canceledOrders: 3,
-	},
-	abhryders: [
-		{
-			id: "1",
-			name: "John Doe",
-			avatar: "/avatars/john.jpg",
-			phoneNumber: "+91 9876543210",
-			totalOrders: 45,
-			totalAmount: 15000,
-			performance: {
-				deliveriesPerHour: 3.5,
-				rating: 4.8,
-				onTimeRate: 95,
-			},
-			documents: {
-				driverLicense: "/documents/driver-license.jpg",
-				aadharCard: "/documents/aadhar.jpg",
-				panCard: "/documents/pan.jpg",
-			},
-			isAvailable: true,
-		},
-		// Add more mock abhryders...
-	],
-	recentOrders: [
-		{
-			id: "ORD001",
-			abhryderId: "1",
-			abhryderName: "John Doe",
-			abhryderAvatar: "/avatars/john.jpg",
-			numberOfItems: 3,
-			totalAmount: 450,
-			timeAgo: "5 minutes ago",
-			status: "Preparing" as OrderStatus,
-		},
-		// Add more mock orders...
-	],
-	performance: {
-		averageRating: 4.5,
-		deliveryTime: 25,
-		customerRetention: 85,
-	},
-	orders: [
-		// New Orders
-		{
-			id: "ORD001",
-			type: "Dine-in" as OrderType,
-			status: "New" as OrderStatus,
-			customer: {
-				name: "Alice Smith",
-				phone: "+91 9876543211",
-				avatar: "/avatars/alice.jpg",
-			},
-			tableNumber: "12",
-			items: [
-				{
-					id: "1",
-					name: "Butter Chicken",
-					quantity: 2,
-					price: 250,
-				},
-				{
-					id: "2",
-					name: "Naan",
-					quantity: 4,
-					price: 30,
-				},
-			],
-			totalAmount: 620,
-			timeOrdered: new Date(),
-		},
-		{
-			id: "ORD002",
-			type: "Delivery" as OrderType,
-			status: "New" as OrderStatus,
-			customer: {
-				name: "Bob Johnson",
-				phone: "+91 9876543212",
-				avatar: "/avatars/bob.jpg",
-			},
-			deliveryAddress: "123 Main St, City Center",
-			items: [
-				{
-					id: "3",
-					name: "Veg Biryani",
-					quantity: 1,
-					price: 180,
-				},
-				{
-					id: "4",
-					name: "Raita",
-					quantity: 1,
-					price: 40,
-				},
-			],
-			totalAmount: 220,
-			timeOrdered: new Date(),
-		},
-		{
-			id: "ORD003",
-			type: "Takeout" as OrderType,
-			status: "New" as OrderStatus,
-			customer: {
-				name: "Carol White",
-				phone: "+91 9876543213",
-				avatar: "/avatars/carol.jpg",
-			},
-			items: [
-				{
-					id: "5",
-					name: "Chicken Tikka",
-					quantity: 2,
-					price: 200,
-				},
-				{
-					id: "6",
-					name: "Garlic Naan",
-					quantity: 2,
-					price: 40,
-				},
-			],
-			totalAmount: 480,
-			timeOrdered: new Date(),
-		},
-		// Preparing Orders
-		{
-			id: "ORD004",
-			type: "Dine-in" as OrderType,
-			status: "Preparing" as OrderStatus,
-			customer: {
-				name: "David Brown",
-				phone: "+91 9876543214",
-				avatar: "/avatars/david.jpg",
-			},
-			tableNumber: "8",
-			items: [
-				{
-					id: "7",
-					name: "Paneer Butter Masala",
-					quantity: 1,
-					price: 220,
-				},
-				{
-					id: "8",
-					name: "Jeera Rice",
-					quantity: 1,
-					price: 100,
-				},
-			],
-			totalAmount: 320,
-			timeOrdered: new Date(Date.now() - 15 * 60000), // 15 minutes ago
-		},
-		{
-			id: "ORD005",
-			type: "Delivery" as OrderType,
-			status: "Preparing" as OrderStatus,
-			customer: {
-				name: "Eva Green",
-				phone: "+91 9876543215",
-				avatar: "/avatars/eva.jpg",
-			},
-			deliveryAddress: "456 Park Avenue, Downtown",
-			items: [
-				{
-					id: "9",
-					name: "Chicken Curry",
-					quantity: 2,
-					price: 180,
-				},
-				{
-					id: "10",
-					name: "Steamed Rice",
-					quantity: 2,
-					price: 80,
-				},
-			],
-			totalAmount: 520,
-			timeOrdered: new Date(Date.now() - 10 * 60000), // 10 minutes ago
-		},
-		// Delivered Orders
-		{
-			id: "ORD006",
-			type: "Takeout" as OrderType,
-			status: "Delivered" as OrderStatus,
-			customer: {
-				name: "Frank Miller",
-				phone: "+91 9876543216",
-				avatar: "/avatars/frank.jpg",
-			},
-			items: [
-				{
-					id: "11",
-					name: "Veg Fried Rice",
-					quantity: 1,
-					price: 150,
-				},
-				{
-					id: "12",
-					name: "Veg Noodles",
-					quantity: 1,
-					price: 150,
-				},
-			],
-			totalAmount: 300,
-			timeOrdered: new Date(Date.now() - 45 * 60000), // 45 minutes ago
-		},
-		{
-			id: "ORD007",
-			type: "Dine-in" as OrderType,
-			status: "Delivered" as OrderStatus,
-			customer: {
-				name: "Grace Lee",
-				phone: "+91 9876543217",
-				avatar: "/avatars/grace.jpg",
-			},
-			tableNumber: "15",
-			items: [
-				{
-					id: "13",
-					name: "Chicken Biryani",
-					quantity: 2,
-					price: 200,
-				},
-				{
-					id: "14",
-					name: "Coke",
-					quantity: 2,
-					price: 40,
-				},
-			],
-			totalAmount: 480,
-			timeOrdered: new Date(Date.now() - 30 * 60000), // 30 minutes ago
-		},
-		// Cancelled Orders
-		{
-			id: "ORD008",
-			type: "Delivery" as OrderType,
-			status: "Cancelled" as OrderStatus,
-			customer: {
-				name: "Henry Wilson",
-				phone: "+91 9876543218",
-				avatar: "/avatars/henry.jpg",
-			},
-			deliveryAddress: "789 Oak Street, Uptown",
-			items: [
-				{
-					id: "15",
-					name: "Butter Chicken",
-					quantity: 1,
-					price: 250,
-				},
-				{
-					id: "16",
-					name: "Butter Naan",
-					quantity: 2,
-					price: 40,
-				},
-			],
-			totalAmount: 330,
-			timeOrdered: new Date(Date.now() - 20 * 60000), // 20 minutes ago
-			cancelledBy: "restaurant" as const,
-			cancellationReason: "Out of stock" as CancellationReason,
-		},
-		{
-			id: "ORD009",
-			type: "Takeout" as OrderType,
-			status: "Cancelled" as OrderStatus,
-			customer: {
-				name: "Ivy Chen",
-				phone: "+91 9876543219",
-				avatar: "/avatars/ivy.jpg",
-			},
-			items: [
-				{
-					id: "17",
-					name: "Veg Biryani",
-					quantity: 1,
-					price: 180,
-				},
-				{
-					id: "18",
-					name: "Raita",
-					quantity: 1,
-					price: 40,
-				},
-			],
-			totalAmount: 220,
-			timeOrdered: new Date(Date.now() - 5 * 60000), // 5 minutes ago
-			cancelledBy: "customer" as const,
-			cancellationReason: "Customer request" as CancellationReason,
-		},
-	],
-};
-
-interface DashboardProps {
-	restaurantId: string;
+// Add a type for backend order
+interface BackendOrderItem {
+	dishId?: string | { $oid: string };
+	quantity: number;
+	_id?: string | { $oid: string };
+}
+interface BackendOrder {
+	displayOrderId?: string;
+	_id?: string | { $oid: string };
+	Amount?: number;
+	items?: BackendOrderItem[];
+	orderType?: string;
+	CustomerAddress?: string;
+	OrderStatus?: string;
+	DeliveryTimestamp?: string | { $date: string };
+	createdAt?: string | { $date: string };
 }
 
-export function Dashboard({ restaurantId }: DashboardProps) {
+// Keep the original tab structure and layout
+export function Dashboard() {
 	const [activeTab, setActiveTab] = useState("home");
+	const [loading, setLoading] = useState(true);
+	const [summary, setSummary] = useState<DashboardSummary | null>(null);
+	const [abhryders, setAbhryders] = useState<Abhryder[]>([]);
+	const [recentOrders, setRecentOrders] = useState<RecentOrder[]>([]);
+	const [performance, setPerformance] = useState<PerformanceMetrics | null>(
+		null,
+	);
+	const [error, setError] = useState<string | null>(null);
 
-	console.log("Restaurant ID:", restaurantId);
+	useEffect(() => {
+		async function fetchData() {
+			setLoading(true);
+			setError(null);
+			try {
+				const summaryData = await fetchDashboardSummary();
+				setSummary({
+					totalOrders: summaryData.totalOrders ?? 0,
+					totalRevenue: summaryData.totalRevenue ?? 0,
+					pendingOrders: summaryData.pendingOrders ?? 0,
+					canceledOrders:
+						summaryData.cancelledOrders ??
+						summaryData.canceledOrders ??
+						0,
+				});
+				setPerformance({
+					averageRating: summaryData.averageRating ?? 0,
+					deliveryTime:
+						summaryData.avgDeliveryTime ??
+						summaryData.averageDeliveryTime ??
+						0,
+					customerRetention: summaryData.retentionPercentage ?? 0,
+				});
+				try {
+					const abhrydersData = await fetchAssignedAbhryders();
+					// eslint-disable-next-line @typescript-eslint/no-explicit-any
+					const mappedAbhryders: Abhryder[] = (
+						abhrydersData || []
+					).map((a: any, idx: number) => ({
+						id:
+							a.PartnerID ||
+							a.partnerId ||
+							a._id ||
+							a.id ||
+							String(idx),
+						name: a.personalInfo?.name || a.Name || a.name || "",
+						avatar:
+							a.PhotoURL ||
+							(a.photoKey ? getS3ImageUrl(a.photoKey) : "") ||
+							"",
+						phoneNumber: a.phone || "",
+						isAvailable:
+							typeof a.isAvailable === "boolean"
+								? a.isAvailable
+								: false,
+						totalOrders: a.todayOrdersCount ?? 0,
+						totalAmount: a.todayCOD ?? 0,
+						performance: {
+							deliveriesPerHour: a.deliveriesPerHour ?? 0,
+							rating: a.averageRating ?? 0,
+							onTimeRate: 0, // Not available in backend, set to 0 or null
+						},
+						documents: {
+							driverLicense: a.DrivingLicense || "",
+							aadharCard: a.Aadhar || "",
+							panCard: a.PAN || "",
+						},
+						city: a.personalInfo?.city || a.city || undefined,
+						languages:
+							a.personalInfo?.languages ||
+							a.languages ||
+							undefined,
+					}));
+					setAbhryders(mappedAbhryders);
+				} catch {
+					toast.error("Failed to fetch Abhryders");
+				}
+				let allOrdersData: BackendOrder[] = [];
+				try {
+					allOrdersData = await fetchAllOrders();
+					// Do not call setOrders here, as the types do not match
+				} catch {
+					toast.error("Failed to fetch orders");
+				}
+				// Map to RecentOrder type for dashboard home (latest 10)
+				const validOrders = (
+					(allOrdersData || []) as BackendOrder[]
+				).filter(
+					(order) =>
+						(order.displayOrderId || order._id) &&
+						(order.displayOrderId || order._id) !== "-" &&
+						(order.displayOrderId || order._id) !== "",
+				);
+				if (validOrders.length < (allOrdersData || []).length) {
+					console.warn(
+						"Some orders were skipped due to missing or invalid id",
+					);
+				}
+				const sortedOrders = validOrders.slice().sort((a, b) => {
+					const aDateRaw = a.DeliveryTimestamp || a.createdAt;
+					const bDateRaw = b.DeliveryTimestamp || b.createdAt;
+					const aDate = aDateRaw
+						? new Date(
+								(typeof aDateRaw === "object"
+									? aDateRaw.$date
+									: aDateRaw) || 0,
+							)
+						: new Date(0);
+					const bDate = bDateRaw
+						? new Date(
+								(typeof bDateRaw === "object"
+									? bDateRaw.$date
+									: bDateRaw) || 0,
+							)
+						: new Date(0);
+					return bDate.getTime() - aDate.getTime();
+				});
+				const recentOrdersMapped = sortedOrders
+					.slice(0, 10)
+					.map((order, idx) => {
+						const id =
+							order.displayOrderId ||
+							(order._id &&
+								(typeof order._id === "object"
+									? order._id.$oid
+									: order._id)) ||
+							String(idx);
+						const items = order.items || [];
+						const numberOfItems = items.reduce(
+							(sum, item) => sum + (item.quantity || 0),
+							0,
+						);
+						const totalAmount = order.Amount || 0;
+						// Normalize and map OrderStatus
+						let rawStatus = order.OrderStatus || "New";
+						console.log("Backend OrderStatus:", rawStatus);
+						if (typeof rawStatus === "string") {
+							rawStatus = rawStatus.trim().toLowerCase();
+						}
+						let status: OrderStatus = "New";
+						switch (rawStatus) {
+							case "new":
+							case "placed":
+							case "available":
+								status = "New";
+								break;
+							case "preparing":
+								status = "Preparing";
+								break;
+							case "picked_up":
+							case "delivered":
+								status = "Delivered";
+								break;
+							case "cancelled":
+							case "canceled":
+								status = "Cancelled";
+								break;
+							default:
+								status = "New";
+						}
+						const timeRaw =
+							order.DeliveryTimestamp || order.createdAt;
+						const timeAgo = timeRaw
+							? formatDistanceToNow(
+									new Date(
+										typeof timeRaw === "object"
+											? timeRaw.$date
+											: timeRaw,
+									),
+									{ addSuffix: true },
+								)
+							: "";
+						return {
+							id,
+							abhryderId: "",
+							abhryderName: "", // Not available in this schema
+							abhryderAvatar: "", // Not available in this schema
+							numberOfItems,
+							totalAmount,
+							timeAgo,
+							status,
+						};
+					});
+				setRecentOrders(recentOrdersMapped);
+			} catch (err: unknown) {
+				let message = "Failed to load dashboard data";
+				if (err instanceof Error) message = err.message;
+				setError(message);
+			}
+			setLoading(false);
+		}
+		fetchData();
+	}, []);
+
+	// Use fallback empty data if not loaded yet, to keep UI structure
+	const summaryData = summary || {
+		totalOrders: 0,
+		totalRevenue: 0,
+		pendingOrders: 0,
+		canceledOrders: 0,
+	};
+	const performanceData = performance || {
+		averageRating: 0,
+		deliveryTime: 0,
+		customerRetention: 0,
+	};
+
+	// Only show error overlay if summary or performance failed to load
+	if (error) {
+		return <div className="p-8 text-center text-red-500">{error}</div>;
+	}
 
 	return (
 		<div className="min-h-screen bg-background">
 			<RestaurantNavbar
-				restaurantId={restaurantId}
+				restaurantId="1"
 				onProfileClick={() => setActiveTab("profile")}
 			/>
 			<div className="mx-auto max-w-7xl px-4 md:px-6 pt-4">
@@ -353,14 +275,14 @@ export function Dashboard({ restaurantId }: DashboardProps) {
 					</TabsList>
 					<TabsContent value="home">
 						<DashboardHome
-							summary={mockData.summary}
-							abhryders={mockData.abhryders}
-							recentOrders={mockData.recentOrders}
-							performance={mockData.performance}
+							summary={summaryData}
+							abhryders={abhryders}
+							recentOrders={recentOrders}
+							performance={performanceData}
 						/>
 					</TabsContent>
 					<TabsContent value="orders">
-						<Orders orders={mockData.orders} />
+						<Orders orders={[]} />
 					</TabsContent>
 					<TabsContent value="menu">
 						<Menu />
@@ -369,6 +291,14 @@ export function Dashboard({ restaurantId }: DashboardProps) {
 						<Profile />
 					</TabsContent>
 				</Tabs>
+				{/* Loading and error overlays, non-destructive */}
+				{loading && (
+					<div className="fixed inset-0 flex items-center justify-center bg-white/60 z-50">
+						<div className="p-6 bg-white rounded shadow text-lg">
+							Loading dashboard...
+						</div>
+					</div>
+				)}
 			</div>
 		</div>
 	);

@@ -1,16 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-	Dialog,
-	DialogContent,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader } from "@/components/ui/dialog";
 import {
 	DashboardSummary,
 	Abhryder,
@@ -19,12 +14,27 @@ import {
 } from "@/types/restaurant-dashboard";
 import { Phone, MessageSquare, UserX } from "lucide-react";
 import Image from "next/image";
+import { Badge } from "@/components/ui/badge";
+import { fetchAbhryderOrderSummary } from "@/lib/restaurant/api";
 
 interface DashboardHomeProps {
 	summary: DashboardSummary;
 	abhryders: Abhryder[];
 	recentOrders: RecentOrder[];
 	performance: PerformanceMetrics;
+}
+
+// Add types for Abhryder order summary
+interface AbhryderOrder {
+	orderId: string;
+	deliveredAt: string;
+	amount: number;
+}
+interface AbhryderOrderSummary {
+	totalDeliveries: number;
+	totalRevenue: number;
+	deliveriesPerHour: string;
+	orders: AbhryderOrder[];
 }
 
 export function DashboardHome({
@@ -37,6 +47,21 @@ export function DashboardHome({
 	const [selectedAbhryder, setSelectedAbhryder] = useState<Abhryder | null>(
 		null,
 	);
+	const [orderSummary, setOrderSummary] =
+		useState<AbhryderOrderSummary | null>(null);
+	const [orderSummaryRange, setOrderSummaryRange] = useState<
+		"today" | "30days"
+	>("today");
+	const [orderSummaryLoading, setOrderSummaryLoading] = useState(false);
+
+	useEffect(() => {
+		if (!selectedAbhryder) return;
+		setOrderSummaryLoading(true);
+		fetchAbhryderOrderSummary(selectedAbhryder.id, orderSummaryRange)
+			.then((data) => setOrderSummary(data))
+			.catch(() => setOrderSummary(null))
+			.finally(() => setOrderSummaryLoading(false));
+	}, [selectedAbhryder, orderSummaryRange]);
 
 	return (
 		<div className="space-y-6 p-6">
@@ -119,21 +144,23 @@ export function DashboardHome({
 				</CardHeader>
 				<CardContent>
 					<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-						{abhryders.slice(0, 3).map((abhryder) => (
+						{abhryders.slice(0, 3).map((abhryder, idx) => (
 							<Card
-								key={abhryder.id}
+								key={abhryder.id || abhryder.phoneNumber || idx}
 								className="cursor-pointer"
 								onClick={() => setSelectedAbhryder(abhryder)}
 							>
 								<CardContent className="p-4">
 									<div className="flex items-center space-x-4">
-										<Image
-											src={abhryder.avatar}
-											alt={abhryder.name}
-											width={48}
-											height={48}
-											className="rounded-full"
-										/>
+										{abhryder.avatar ? (
+											<Image
+												src={abhryder.avatar}
+												alt={abhryder.name}
+												width={48}
+												height={48}
+												className="rounded-full"
+											/>
+										) : null}
 										<div>
 											<h3 className="font-semibold">
 												{abhryder.name}
@@ -158,9 +185,9 @@ export function DashboardHome({
 				</CardHeader>
 				<CardContent>
 					<div className="space-y-4">
-						{recentOrders.map((order) => (
+						{recentOrders.map((order, idx) => (
 							<div
-								key={order.id}
+								key={order.id || idx}
 								className="flex items-center justify-between border-b pb-4"
 							>
 								<div className="flex items-center space-x-4">
@@ -176,13 +203,15 @@ export function DashboardHome({
 								</div>
 								<div className="flex items-center space-x-4">
 									<div className="flex items-center space-x-2">
-										<Image
-											src={order.abhryderAvatar}
-											alt={order.abhryderName}
-											width={32}
-											height={32}
-											className="rounded-full"
-										/>
+										{order.abhryderAvatar ? (
+											<Image
+												src={order.abhryderAvatar}
+												alt={order.abhryderName}
+												width={32}
+												height={32}
+												className="rounded-full"
+											/>
+										) : null}
 										<span className="text-sm">
 											{order.abhryderName}
 										</span>
@@ -190,8 +219,8 @@ export function DashboardHome({
 									<span className="text-sm text-gray-500">
 										{order.timeAgo}
 									</span>
-									<span
-										className={`rounded-full px-2 py-1 text-xs ${
+									<Badge
+										className={
 											order.status === "Delivered"
 												? "bg-green-100 text-green-800"
 												: order.status === "Preparing"
@@ -200,10 +229,10 @@ export function DashboardHome({
 														  "Cancelled"
 														? "bg-red-100 text-red-800"
 														: "bg-blue-100 text-blue-800"
-										}`}
+										}
 									>
 										{order.status}
-									</span>
+									</Badge>
 								</div>
 							</div>
 						))}
@@ -223,7 +252,9 @@ export function DashboardHome({
 								Average Rating
 							</h3>
 							<p className="text-2xl font-bold">
-								{performance.averageRating.toFixed(1)}
+								{typeof performance.averageRating === "number"
+									? performance.averageRating.toFixed(1)
+									: "0.0"}
 							</p>
 						</div>
 						<div>
@@ -255,9 +286,42 @@ export function DashboardHome({
 					{selectedAbhryder && (
 						<>
 							<DialogHeader>
-								<DialogTitle>
-									{selectedAbhryder.name}
-								</DialogTitle>
+								<div className="flex items-center space-x-4 mb-4">
+									{selectedAbhryder.avatar && (
+										<Image
+											src={selectedAbhryder.avatar}
+											alt={selectedAbhryder.name}
+											width={80}
+											height={80}
+											className="rounded-full border"
+										/>
+									)}
+									<div>
+										<h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100">
+											{selectedAbhryder.name}
+										</h2>
+										{selectedAbhryder.phoneNumber && (
+											<p className="text-gray-600 dark:text-gray-400">
+												{selectedAbhryder.phoneNumber}
+											</p>
+										)}
+										{selectedAbhryder.city && (
+											<p className="text-gray-500 dark:text-gray-400">
+												{selectedAbhryder.city}
+											</p>
+										)}
+										{selectedAbhryder.languages &&
+											selectedAbhryder.languages.length >
+												0 && (
+												<p className="text-gray-500 dark:text-gray-400">
+													Languages:{" "}
+													{selectedAbhryder.languages.join(
+														", ",
+													)}
+												</p>
+											)}
+									</div>
+								</div>
 							</DialogHeader>
 							<Tabs defaultValue="orders">
 								<TabsList>
@@ -272,45 +336,131 @@ export function DashboardHome({
 									<div className="space-y-4">
 										<div className="flex space-x-4">
 											<Button
-												variant="outline"
+												variant={
+													orderSummaryRange ===
+													"today"
+														? "default"
+														: "outline"
+												}
 												className="flex-1"
+												onClick={() =>
+													setOrderSummaryRange(
+														"today",
+													)
+												}
 											>
 												Today&apos;s Summary
 											</Button>
 											<Button
-												variant="outline"
+												variant={
+													orderSummaryRange ===
+													"30days"
+														? "default"
+														: "outline"
+												}
 												className="flex-1"
+												onClick={() =>
+													setOrderSummaryRange(
+														"30days",
+													)
+												}
 											>
 												Last 30 Days
 											</Button>
 										</div>
-										<div className="grid gap-4">
-											<Card>
-												<CardContent className="p-4">
-													<h3 className="font-semibold">
-														COD Collected
+										{orderSummaryLoading ? (
+											<div className="text-center py-4 text-gray-500">
+												Loading...
+											</div>
+										) : orderSummary ? (
+											<div className="grid gap-4 md:grid-cols-3">
+												<Card>
+													<CardContent className="p-4">
+														<h3 className="font-semibold">
+															Total Deliveries
+														</h3>
+														<p className="text-2xl font-bold">
+															{
+																orderSummary.totalDeliveries
+															}
+														</p>
+													</CardContent>
+												</Card>
+												<Card>
+													<CardContent className="p-4">
+														<h3 className="font-semibold">
+															Total Revenue
+														</h3>
+														<p className="text-2xl font-bold">
+															₹
+															{
+																orderSummary.totalRevenue
+															}
+														</p>
+													</CardContent>
+												</Card>
+												<Card>
+													<CardContent className="p-4">
+														<h3 className="font-semibold">
+															Deliveries/Hour
+														</h3>
+														<p className="text-2xl font-bold">
+															{
+																orderSummary.deliveriesPerHour
+															}
+														</p>
+													</CardContent>
+												</Card>
+											</div>
+										) : (
+											<div className="text-center py-4 text-gray-500">
+												No summary available.
+											</div>
+										)}
+										{orderSummary &&
+											orderSummary.orders &&
+											orderSummary.orders.length > 0 && (
+												<div>
+													<h3 className="font-semibold mb-2">
+														Delivered Orders
 													</h3>
-													<p className="text-2xl font-bold">
-														₹
-														{
-															selectedAbhryder.totalAmount
-														}
-													</p>
-												</CardContent>
-											</Card>
-											<Card>
-												<CardContent className="p-4">
-													<h3 className="font-semibold">
-														Orders Completed
-													</h3>
-													<p className="text-2xl font-bold">
-														{
-															selectedAbhryder.totalOrders
-														}
-													</p>
-												</CardContent>
-											</Card>
-										</div>
+													<div className="space-y-2 max-h-64 overflow-y-auto">
+														{orderSummary.orders.map(
+															(
+																order: AbhryderOrder,
+															) => (
+																<div
+																	key={
+																		order.orderId
+																	}
+																	className="flex justify-between items-center border rounded p-2"
+																>
+																	<div>
+																		<div className="font-medium">
+																			{
+																				order.orderId
+																			}
+																		</div>
+																		<div className="text-xs text-gray-500">
+																			{order.deliveredAt
+																				? new Date(
+																						order.deliveredAt,
+																					).toLocaleString()
+																				: ""}
+																		</div>
+																	</div>
+																	<div className="font-bold">
+																		₹
+																		{
+																			order.amount
+																		}
+																	</div>
+																</div>
+															),
+														)}
+													</div>
+												</div>
+											)}
 									</div>
 								</TabsContent>
 								<TabsContent value="profile">
@@ -376,17 +526,21 @@ export function DashboardHome({
 															Driver&apos;s
 															License
 														</h4>
-														<Image
-															src={
-																selectedAbhryder
-																	.documents
-																	.driverLicense
-															}
-															alt="Driver's License"
-															width={200}
-															height={150}
-															className="mt-2 rounded"
-														/>
+														{selectedAbhryder
+															?.documents
+															.driverLicense ? (
+															<Image
+																src={
+																	selectedAbhryder
+																		.documents
+																		.driverLicense
+																}
+																alt="Driver's License"
+																width={200}
+																height={150}
+																className="mt-2 rounded"
+															/>
+														) : null}
 													</CardContent>
 												</Card>
 												<Card>
@@ -394,17 +548,21 @@ export function DashboardHome({
 														<h4 className="text-sm font-medium">
 															Aadhar Card
 														</h4>
-														<Image
-															src={
-																selectedAbhryder
-																	.documents
-																	.aadharCard
-															}
-															alt="Aadhar Card"
-															width={200}
-															height={150}
-															className="mt-2 rounded"
-														/>
+														{selectedAbhryder
+															?.documents
+															.aadharCard ? (
+															<Image
+																src={
+																	selectedAbhryder
+																		.documents
+																		.aadharCard
+																}
+																alt="Aadhar Card"
+																width={200}
+																height={150}
+																className="mt-2 rounded"
+															/>
+														) : null}
 													</CardContent>
 												</Card>
 												<Card>
@@ -412,17 +570,21 @@ export function DashboardHome({
 														<h4 className="text-sm font-medium">
 															PAN Card
 														</h4>
-														<Image
-															src={
-																selectedAbhryder
-																	.documents
-																	.panCard
-															}
-															alt="PAN Card"
-															width={200}
-															height={150}
-															className="mt-2 rounded"
-														/>
+														{selectedAbhryder
+															?.documents
+															.panCard ? (
+															<Image
+																src={
+																	selectedAbhryder
+																		.documents
+																		.panCard
+																}
+																alt="PAN Card"
+																width={200}
+																height={150}
+																className="mt-2 rounded"
+															/>
+														) : null}
 													</CardContent>
 												</Card>
 											</div>

@@ -18,6 +18,8 @@ export interface Abhryder {
 	name: string;
 	avatar: string;
 	phoneNumber: string;
+	city?: string;
+	languages?: string[];
 	totalOrders: number;
 	totalAmount: number;
 	performance: {
@@ -72,4 +74,3 @@ export interface Order {
 	cancelledBy?: "restaurant" | "customer";
 	cancellationReason?: CancellationReason;
 }
- 

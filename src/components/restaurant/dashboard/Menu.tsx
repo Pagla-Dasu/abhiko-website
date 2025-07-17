@@ -32,6 +32,9 @@ export function Menu() {
 	const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
 	const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
 
+	// Add a counter for menu item IDs
+	let menuItemIdCounter = 0;
+
 	const categories = [
 		"All",
 		"Starters",
@@ -41,9 +44,10 @@ export function Menu() {
 	];
 
 	const handleAddItem = (item: Omit<MenuItem, "id" | "isAvailable">) => {
+		menuItemIdCounter += 1;
 		const newItem: MenuItem = {
 			...item,
-			id: Math.random().toString(36).substr(2, 9),
+			id: `menuitem-${menuItemIdCounter}`,
 			isAvailable: true,
 		};
 		setMenuItems([...menuItems, newItem]);
